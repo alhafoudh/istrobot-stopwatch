@@ -15,6 +15,7 @@
 
 #define LIGHT_DIFF_THRESHOLD 5
 #define LIGHT_CHANGE_DELAY_US 300
+#define LIGHT_CALIBRATION_THRESHOLD 300
 
 #define IGNORE_TIME_MUTIPLIER 1000
 #define EEPROM_IGNORE_TIME_CHECK_ADDRESS 0
@@ -50,10 +51,12 @@ void renderStatus(char const *status) {
   display.display();
 }
 
-void renderValue(int value) {
+void renderCalibration(int value) {
   display.clearDisplay();
   renderHeader();
-  display.setCursor(128 / 2 - 5 * 12 / 2, 48);
+  display.setCursor(1 * 12, 48);
+  display.print(value > LIGHT_CALIBRATION_THRESHOLD ? "OK" : "CALIB");
+  display.setCursor((12 - 5) * 12, 48);
   display.print(value);
   display.display();
 }
@@ -165,7 +168,8 @@ int readLaserOn() {
   return analogRead(LIGHT_INPUT_PIN);
 }
 
-void reportValueSerial(int value) {
+void reportCalibrationSerial(int value) {
+  Serial.print("C ");
   Serial.println(value);
   Serial.flush();
 }
@@ -246,8 +250,8 @@ void loop() {
   valDiff = valOn - valOff;
 
   if (stopwatchState == STOPWATCH_DEBUG) {
-    reportValueSerial(valDiff);
-    renderValue((int)valDiff);
+    reportCalibrationSerial(valDiff);
+    renderCalibration((int)valDiff);
     delay(50);
     return;
   }
