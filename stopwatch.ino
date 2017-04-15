@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <Wire.h>
+#include <EEPROM.h>
 
 #include <Adafruit_SSD1306.h>
 
@@ -13,8 +14,11 @@
 #define BUTTON_INPUT_PIN 6
 
 #define LIGHT_DIFF_THRESHOLD 5
-#define LIGHT_CHANGE_DELAY_US 500
-#define IGNORE_TIME_MS 1000
+#define LIGHT_CHANGE_DELAY_US 300
+
+#define IGNORE_TIME_MUTIPLIER 1000
+#define EEPROM_IGNORE_TIME_CHECK_ADDRESS 0
+#define EEPROM_IGNORE_TIME_ADDRESS 1
 
 #define STOPWATCH_DEBUG -1
 #define STOPWATCH_READY 0
@@ -26,6 +30,7 @@ Adafruit_SSD1306 display(3);
 
 String cmdLine = "";
 bool cmdComplete = false;
+byte ignoreTimeValue = 1;
 
 void renderHeader() {
   display.setTextSize(2);
@@ -53,17 +58,35 @@ void renderValue(int value) {
   display.display();
 }
 
+void readIgnoreTime() {
+  int ignoreTimeMsCheck = EEPROM.read(EEPROM_IGNORE_TIME_CHECK_ADDRESS);
+  if (ignoreTimeMsCheck == 255) {
+    ignoreTimeValue = EEPROM.read(EEPROM_IGNORE_TIME_ADDRESS);
+  }
+}
+
+void writeIgnoreTime() {
+  EEPROM.write(EEPROM_IGNORE_TIME_ADDRESS, ignoreTimeValue);
+  EEPROM.write(EEPROM_IGNORE_TIME_CHECK_ADDRESS, 255);
+  readIgnoreTime();
+}
+
 void setup() {
+  // Read EEPROM config
+  readIgnoreTime();
+
+  // Set pins
   pinMode(LIGHT_OUTPUT_PIN, OUTPUT);
   pinMode(REPORT_PIN1, OUTPUT);
   pinMode(REPORT_PIN2, OUTPUT);
   pinMode(BUTTON_INPUT_PIN, INPUT);
 
+  // Init display
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  renderStatus("READY");
+  renderStatus("Init");
 
+  // Init serial
   cmdLine.reserve(128);
-
   Serial.begin(19200);
 }
 
@@ -149,15 +172,11 @@ void reportValueSerial(int value) {
 
 void serialEvent() {
   while (Serial.available()) {
-    // get the new byte:
     char chr = (char)Serial.read();
-    // add it to the inputString:
-    cmdLine += chr;
-    // if the incoming character is a newline, set a flag
-    // so the main loop can do something about it:
-    if (chr == '\n') {
+
+    if (chr == '\n')
       cmdComplete = true;
-    }
+    else cmdLine += chr;
   }
 }
 
@@ -187,6 +206,14 @@ void loop() {
   if (cmdComplete) {
     if (cmdLine[0] == 'R') {
       stopwatchReset();
+    } else if (cmdLine[0] == '0') {
+      if (cmdLine.length() == 3) {
+        ignoreTimeValue = (byte)(cmdLine[2] - '0');
+        writeIgnoreTime();
+      }
+
+      Serial.print("0 ");
+      Serial.println(ignoreTimeValue);
     }
 
     // Clear the cmdLine
@@ -226,7 +253,7 @@ void loop() {
   }
 
   if (stopwatchState == STOPWATCH_IGNORING) {
-    if (millis() - timeStart > IGNORE_TIME_MS)
+    if (millis() - timeStart > ignoreTimeValue * IGNORE_TIME_MUTIPLIER)
       stopwatchState = STOPWATCH_RUNNING;
     else
       return;
@@ -251,4 +278,5 @@ void loop() {
       return;
     }
   }
+
 }
