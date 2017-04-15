@@ -69,7 +69,6 @@ void stopwatchReset() {
   uiRenderStatus(&display, "READY");
 }
 
-
 void loop() {
   // Commands from Serial
   if (cmdComplete) {
