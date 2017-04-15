@@ -45,6 +45,14 @@ void renderStatus(char const *status) {
   display.display();
 }
 
+void renderValue(int value) {
+  display.clearDisplay();
+  renderHeader();
+  display.setCursor(128 / 2 - 5 * 12 / 2, 48);
+  display.print(value);
+  display.display();
+}
+
 void setup() {
   pinMode(LIGHT_OUTPUT_PIN, OUTPUT);
   pinMode(REPORT_PIN1, OUTPUT);
@@ -155,7 +163,7 @@ void serialEvent() {
 
 int valOff, valOn, valDiff;
 
-int stopwatchState = STOPWATCH_READY;
+int stopwatchState = STOPWATCH_DEBUG;
 unsigned long timeStart;
 unsigned long timeFinish;
 
@@ -212,6 +220,7 @@ void loop() {
 
   if (stopwatchState == STOPWATCH_DEBUG) {
     reportValueSerial(valDiff);
+    renderValue((int)valDiff);
     delay(50);
     return;
   }
