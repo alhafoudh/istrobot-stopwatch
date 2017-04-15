@@ -69,8 +69,7 @@ void stopwatchReset() {
   uiRenderStatus(&display, "READY");
 }
 
-void loop() {
-  // Commands from Serial
+void processSerialCommands() {
   if (cmdComplete) {
     if (cmdLine[0] == 'R') {
       stopwatchReset();
@@ -89,8 +88,9 @@ void loop() {
     cmdLine = "";
     cmdComplete = false;
   }
+}
 
-  // Reset button
+void checkResetButton() {
   int buttonReading = digitalRead(BUTTON_INPUT_PIN);
 
   if (buttonReading != lastButtonState) {
@@ -108,6 +108,11 @@ void loop() {
   }
 
   lastButtonState = buttonReading;
+}
+
+void loop() {
+  processSerialCommands();
+  checkResetButton();
 
   // Light reading
   valOff = readLaserOff();
