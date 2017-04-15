@@ -80,8 +80,7 @@ void processSerialCommands() {
         reloadConfig();
       }
 
-      Serial.print("0 ");
-      Serial.println(ignoreTimeValue);
+      commSendWithULongParam("0", (unsigned long)ignoreTimeValue);
     }
 
     // Clear the cmdLine

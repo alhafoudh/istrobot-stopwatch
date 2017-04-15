@@ -16,6 +16,7 @@ void commSendWithULongParam(char const *str, unsigned long param) {
 
 void commSendCalibrationValue(int value) {
   Serial.print("C ");
-  Serial.println(value);
+  Serial.print(value);
+  Serial.print("\n");
   Serial.flush();
 }
